@@ -22,3 +22,6 @@ Example script running a `DQN` algorithm on the `ColoringEnv`:
 ```
 python rl_playground/algs/dqn/dqn_main_simple.py --size=10x10 --log_every=1 --start_train_ts=100 --gamma=1.0 --seed=1 --learning_rate=1e-4 --max_grad_norm=10 --step_reward=1 --depth_channel_first --stay_inside --with_step_penalty --with_revisit_penalty --with_color_reward
 ```
+
+**Result** (javascript-based rendering not yet in the repo)
+[![](out/optimal_solutionj.gif)](out/optimal_solutionj.gif)
