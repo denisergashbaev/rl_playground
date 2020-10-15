@@ -1,8 +1,12 @@
 **My Playground for RL algorithms** 
 
 Implemented algorithms:
- * REINFORCE with baseline 
+ * REINFORCE with baseline
+    * [pyTorch documentation implementation](algs/reinforce/reference/reinforce.py)
+    * [my implementation](algs/reinforce/reinforce.py)
  * DQN
+    * [stable-baseline3 with my custom environment](algs/dqn/reference/)
+    * [my implementation](algs/dqn/dqn.py) 
  
  
 These algorithms are run on CartPole and [my own coloring environment](common/env.py)
@@ -24,4 +28,4 @@ python rl_playground/algs/dqn/dqn_main_simple.py --size=10x10 --log_every=1 --st
 ```
 
 **Result** (javascript-based rendering not yet in the repo)
-[![](out/optimal_solutionj.gif)](out/optimal_solutionj.gif)
+[![](out/optimal_solution.gif)](out/optimal_solution.gif)

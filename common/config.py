@@ -14,7 +14,6 @@ class Config:
         self.timestamp = None
         self.data_dir = data_dir
         self.data_files = data_files
-        self.avg_reward_data_files = avg_reward_data_files
         self.loaded_data_files = []
         self.step_reward = step_reward
         self.fast_fail = fast_fail

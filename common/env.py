@@ -103,7 +103,7 @@ class ColoringEnv(gym.Env):
         original_position = self.nonzero_indices[randint(0, len(self.nonzero_indices) - 1)] \
             if self.changing_start_positions else self.start_position
         #print('new position:', original_position, 'value at the new position:', self.emb_pattern_layer[original_position])
-        # no .clear() because we do not want to changed returned by reference data
+        # no .clear() because we do not want to changed returned by reinforce data
         self.steps = []
         self.done = False
 
