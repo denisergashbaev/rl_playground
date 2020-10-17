@@ -2,7 +2,7 @@
 
 Implemented algorithms:
  * REINFORCE with baseline
-    * [pyTorch documentation implementation](algs/reinforce/reference/reinforce.py)
+    * [pyTorch documentation implementation](algs/reinforce/reference/reinforce_pytorch_docu.py)
     * [my implementation](algs/reinforce/reinforce.py)
  * DQN
     * [stable-baseline3 with my custom environment](algs/dqn/reference/)
