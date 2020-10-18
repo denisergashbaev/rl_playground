@@ -28,4 +28,5 @@ python rl_playground/algs/dqn/dqn_main_simple.py --size=10x10 --log_every=1 --st
 ```
 
 **Result** (javascript-based rendering not yet in the repo)
+
 [![](out/optimal_solution.gif)](out/optimal_solution.gif)
