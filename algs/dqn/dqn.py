@@ -67,7 +67,7 @@ def run(params):
             rewards = torch.tensor(rewards, dtype=torch.float32).unsqueeze(1).to(device)
             actions = torch.tensor(actions).unsqueeze(1).to(device)
             dones = torch.tensor(dones).unsqueeze(1).to(device)
-            if True:
+            if True: 
                 with torch.no_grad():
                     # Compute the target Q values
                     target_q = q_hat(obses_tp1)
@@ -122,7 +122,7 @@ def run(params):
 
         if done:
             for idx, ep_reward in enumerate(all_rewards[-1]):
-                helper.add_scalar(writer, "episode_reward_idx{}".format(idx), ep_reward, episode_no, self.params)
+                helper.add_scalar(writer, "episode_reward_idx{}".format(idx), ep_reward, episode_no, params)
             helper.add_scalar(writer, "steps_count", info['steps_count'], episode_no, params)
 
             if episode_no % params.log_every == 0:
