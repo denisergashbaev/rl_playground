@@ -1,25 +1,21 @@
 import argparse
 import math
 import random
-from datetime import datetime
 from operator import add
-from os import path
 
 import numpy as np
 import torch
 from stable_baselines3.common import utils as sb3_utils
 from torch import optim
 from torch.nn import functional as F
-from torch.utils.tensorboard import SummaryWriter
 
 import common.config as cfg
-from common.env import ColoringEnv
-from algs.dqn.network import Model_2x2, Model_10x10
+from algs.dqn import network
 from algs.dqn.replay_buffer import ReplayBuffer
+from common.env import ColoringEnv
+from utils import helper
 
-using_cuda = torch.cuda.is_available()
-device = torch.device('cuda' if using_cuda else 'cpu')
-print('dqn_main.py using device:', device)
+device, use_cuda = helper.get_pytorch_device()
 
 
 def get_epsilon(epsilon_start, epsilon_final, epsilon_decay, frame_idx):
@@ -28,31 +24,12 @@ def get_epsilon(epsilon_start, epsilon_final, epsilon_decay, frame_idx):
 
 
 def run(params):
-    sb3_utils.set_random_seed(params.seed, using_cuda=using_cuda)
-    experiment_datetime = str(datetime.now()).replace(' ', '_').replace(':', '_')
-    writer = SummaryWriter(path.dirname(path.realpath(__file__)) + '/runs/' + experiment_datetime)
+    sb3_utils.set_random_seed(params.seed, using_cuda=use_cuda)
+    writer = helper.get_summary_writer(__file__, params)
+    env = helper.make_env(params, 'env')
 
-    c = cfg.a2c_config_train_2x2 if params.size == '2x2' else cfg.a2c_config_train_10x10
-    c.step_reward = -params.step_reward
-    c.init()
-    start_position = (1, 0) if params.size == '2x2' else (1, 3)
-    env = ColoringEnv(c, 'env', start_position,
-                        depth_channel_first=params.depth_channel_first,
-                        with_step_penalty=params.with_step_penalty,
-                        with_revisit_penalty=params.with_revisit_penalty,
-                        stay_inside=params.stay_inside,
-                        with_color_reward=params.with_color_reward,
-                        total_reward=params.total_reward,
-                        covered_steps_ratio=params.covered_steps_ratio,
-                        as_image=params.env_as_image)
-
-    dims = (env.observation_space.shape[0], env.action_space.n)
-    if params.size == '10x10':
-        q = Model_10x10(*dims).to(device)
-        q_hat = Model_10x10(*dims).to(device)
-    elif params.size == '2x2':
-        q = Model_2x2(*dims).to(device)
-        q_hat = Model_2x2(*dims).to(device)
+    q = network.get_model_class(params)(env).to(device)
+    q_hat = network.get_model_class(params)(env).to(device)
     q_hat.load_state_dict(q.state_dict())
 
     replay_buffer = ReplayBuffer(params.replay_size)
@@ -74,8 +51,6 @@ def run(params):
             val = q(np.expand_dims(state, axis=0))
             a = torch.argmax(val).item()
             # equivalent to q(...).max(1)[1].data[0] (selects max tensor with .max(1) and its index with ...[1])
-        # MaxAndSkipEnv (above) repeats action N times
-        # and returns the state of the last frame (maxed with the previous)
         s_tp1, r, done, infos = env.step(a)
         episode_reward = list(map(add, episode_reward, [r]))
         replay_buffer.add(state, a, r, s_tp1, done)
@@ -147,8 +122,8 @@ def run(params):
 
         if done:
             for idx, ep_reward in enumerate(all_rewards[-1]):
-                writer.add_scalar("episode_reward_idx{}".format(idx), ep_reward, episode_no)
-            writer.add_scalar("steps_count", infos['steps_count'], episode_no)
+                helper.add_scalar(writer, "episode_reward_idx{}".format(idx), ep_reward, episode_no, self.params)
+            helper.add_scalar(writer, "steps_count", info['steps_count'], episode_no, params)
 
             if episode_no % params.log_every == 0:
                 #print('replaybuffer size:', len(replay_buffer))
@@ -159,29 +134,16 @@ def run(params):
                 out_str += ', steps_count {}'.format(infos['steps_count'])
                 out_str += ', epsilon {}'.format(epsilon)
                 print(out_str)
-    writer.flush()
-    writer.close()
+    helper.close_summary_writer(writer)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--size", type=str, default="2x2")
-    parser.add_argument("--learning_rate", type=float, default=0.0001)
-    parser.add_argument("--target_update_rate", type=float, default=0.1)
-    parser.add_argument("--replay_size", type=int, default=int(1e6))
-    parser.add_argument("--start_train_ts", type=int, default=10000)
-    parser.add_argument("--epsilon_start", type=float, default=1.0)
-    parser.add_argument("--epsilon_end", type=float, default=0.01)
-    parser.add_argument("--epsilon_decay", type=int, default=30000)
-    parser.add_argument("--max_ts", type=int, default=1400000)
-    parser.add_argument("--batch_size", type=int, default=32)
+    parser.add_argument("--learning_rate", type=float, default=3e-2)
     parser.add_argument("--gamma", type=float, default=1)
-    parser.add_argument("--log_every", type=int, default=10000)
-    parser.add_argument("--target_network_update_f", type=int, default=10000)
-
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--step_reward", default="1", type=float)
-    parser.add_argument("--max_grad_norm", type=float)
     parser.add_argument("--env_as_image", action="store_true")
     parser.add_argument("--depth_channel_first", action="store_true")
     parser.add_argument("--with_step_penalty", action="store_true")
@@ -190,7 +152,24 @@ if __name__ == "__main__":
     parser.add_argument("--with_color_reward", action="store_true")
     parser.add_argument("--total_reward", action="store_true")
     parser.add_argument("--covered_steps_ratio", action="store_true")
-    parser.add_argument("--load_model", type=str, default=None)
+    parser.add_argument('--num_episodes', type=int, default=20000, help='number of episodes')
+    parser.add_argument('--scaling_factor', type=float, default=1, help='learning rate')
+    parser.add_argument('--log_interval', type=int, default=10, metavar='N',
+                        help='interval between training status logs (default: 10)')
+    parser.add_argument("--log_tensorboard", action="store_true")
+    parser.add_argument("--render", action="store_true")
+
+    parser.add_argument("--target_update_rate", type=float, default=0.1)
+    parser.add_argument("--replay_size", type=int, default=int(1e6))
+    parser.add_argument("--start_train_ts", type=int, default=10000)
+    parser.add_argument("--epsilon_start", type=float, default=1.0)
+    parser.add_argument("--epsilon_end", type=float, default=0.01)
+    parser.add_argument("--epsilon_decay", type=int, default=30000)
+    parser.add_argument("--max_ts", type=int)
+    parser.add_argument("--batch_size", type=int, default=32)
+    parser.add_argument("--target_network_update_f", type=int, default=10000)
+    parser.add_argument("--max_grad_norm", type=float)
+
 
     parsed = parser.parse_args()
     print('arguments:', parsed)
