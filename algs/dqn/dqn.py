@@ -5,14 +5,11 @@ from operator import add
 
 import numpy as np
 import torch
+from algs.dqn import network
+from algs.dqn.replay_buffer import ReplayBuffer
 from stable_baselines3.common import utils as sb3_utils
 from torch import optim
 from torch.nn import functional as F
-
-import common.config as cfg
-from algs.dqn import network
-from algs.dqn.replay_buffer import ReplayBuffer
-from common.env import ColoringEnv
 from utils import helper
 
 device, use_cuda = helper.get_pytorch_device()
@@ -33,7 +30,7 @@ def run(params):
     q_hat.load_state_dict(q.state_dict())
 
     replay_buffer = ReplayBuffer(params.replay_size)
-    #todo check optimizer
+    # todo check optimizer
     opt = optim.Adam(q.parameters(), lr=params.learning_rate)
 
     all_rewards = []
@@ -41,7 +38,8 @@ def run(params):
     episode_reward = [0]
     episode_no = 0
     for t in range(1, params.max_ts + 1):
-        # order of terms important so that the call to 'next(eps)' does not decrease epsilon
+        # order of terms important so that the call to 'next(eps)'
+        # does not decrease epsilon
         epsilon = get_epsilon(
             params.epsilon_start, params.epsilon_end, params.epsilon_decay, t
         )
@@ -50,7 +48,8 @@ def run(params):
         else:
             val = q(np.expand_dims(state, axis=0))
             a = torch.argmax(val).item()
-            # equivalent to q(...).max(1)[1].data[0] (selects max tensor with .max(1) and its index with ...[1])
+            # equivalent to q(...).max(1)[1].data[0]
+            # (selects max tensor with .max(1) and its index with ...[1])
         s_tp1, r, done, infos = env.step(a)
         episode_reward = list(map(add, episode_reward, [r]))
         replay_buffer.add(state, a, r, s_tp1, done)
@@ -63,11 +62,13 @@ def run(params):
 
         # replay buffer reached minimum capacity
         if len(replay_buffer) > params.start_train_ts:
-            obses_t, actions, rewards, obses_tp1, dones = replay_buffer.sample(params.batch_size)
-            rewards = torch.tensor(rewards, dtype=torch.float32).unsqueeze(1).to(device)
+            obses_t, actions, rewards, obses_tp1, dones = \
+                replay_buffer.sample(params.batch_size)
+            rewards = torch.tensor(rewards, dtype=torch.float32) \
+                .unsqueeze(1).to(device)
             actions = torch.tensor(actions).unsqueeze(1).to(device)
             dones = torch.tensor(dones).unsqueeze(1).to(device)
-            if True: 
+            if True:
                 with torch.no_grad():
                     # Compute the target Q values
                     target_q = q_hat(obses_tp1)
@@ -123,9 +124,9 @@ def run(params):
         if done:
             for idx, ep_reward in enumerate(all_rewards[-1]):
                 helper.add_scalar(writer, "episode_reward_idx{}".format(idx), ep_reward, episode_no, params)
-            helper.add_scalar(writer, "steps_count", info['steps_count'], episode_no, params)
+            helper.add_scalar(writer, "steps_count", infos['steps_count'], episode_no, params)
 
-            if episode_no % params.log_every == 0:
+            if episode_no % params.log_interval == 0:
                 #print('replaybuffer size:', len(replay_buffer))
                 out_str = "Timestep {}".format(t)
                 if len(all_rewards) > 0:

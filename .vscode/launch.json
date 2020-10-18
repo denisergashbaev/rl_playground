@@ -1,0 +1,31 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "dqn",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/algs/dqn/dqn.py",
+            "args": [
+                "--size", "10x10",
+                "--gamma", "1.0",
+                "--seed", "1",
+                "--step_reward", "1",
+                "--depth_channel_first",
+                "--stay_inside",
+                "--with_step_penalty",
+                "--with_revisit_penalty",
+                "--with_color_reward",
+                "--log_tensorboard",
+                "--log_interval", "10",
+                "--max_grad_norm", "10",
+                "--learning_rate", "0.0001",
+                "--max_ts", "100000"
+            ],
+            "console": "integratedTerminal"
+        }
+    ]
+}
