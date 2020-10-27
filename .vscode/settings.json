@@ -7,4 +7,5 @@
         "--max-line-length=120",
         "--ignore=E501,E265,E303",
     ],
+    "python.pythonPath": "venv/bin/python",
 }

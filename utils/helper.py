@@ -4,6 +4,7 @@ from datetime import datetime
 from pathlib import Path
 
 import torch
+import argparse
 from torch.utils.tensorboard import SummaryWriter
 
 from common import config as cfg
@@ -12,7 +13,7 @@ from common.env import ColoringEnv
 log = logging.getLogger(__name__)
 
 
-def get_parsed_params(parser):
+def get_parsed_params(parser) -> argparse.Namespace:
     params = parser.parse_args()
     print('\n============BEGIN PARAMETERS============')
     print('\n'.join(["{}: {}".format(key, getattr(params, key)) for key in sorted(params.__dict__)]))
@@ -28,7 +29,7 @@ def get_pytorch_device():
     return device, use_cuda
 
 
-def make_env(params, worker_id='env'):
+def make_env(params, worker_id='env') -> ColoringEnv:
     c = cfg.a2c_config_train_2x2 if params.size == '2x2' else cfg.a2c_config_train_10x10
     c.step_reward = -params.step_reward
     c.init()
@@ -45,12 +46,16 @@ def make_env(params, worker_id='env'):
     return env
 
 
-def get_summary_writer(file, params):
+def get_summary_writer(file, params) -> SummaryWriter:
     writer = None
     if params.log_tensorboard:
-        experiment_datetime = "{}_{}".format(Path(file).name, str(datetime.now()).replace(' ', '_').replace(':', '_'))
+        experiment_datetime = get_experiment_datetime(file)
         writer = SummaryWriter(path.dirname(path.realpath(__file__)) + '/runs/' + experiment_datetime)
     return writer
+
+
+def get_experiment_datetime(file) -> str:
+    return "{}_{}".format(Path(file).name, str(datetime.now()).replace(' ', '_').replace(':', '_'))
 
 
 def add_scalar(writer, tag, scalar_value, global_step, params):

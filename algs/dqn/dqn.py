@@ -11,6 +11,7 @@ from stable_baselines3.common import utils as sb3_utils
 from torch import optim
 from torch.nn import functional as F
 from utils import helper
+from trains import Task
 
 device, use_cuda = helper.get_pytorch_device()
 
@@ -20,7 +21,8 @@ def get_epsilon(epsilon_start, epsilon_final, epsilon_decay, frame_idx):
         -1.0 * frame_idx / epsilon_decay)
 
 
-def run(params):
+def run(params: argparse.Namespace):
+    Task.init()
     sb3_utils.set_random_seed(params.seed, using_cuda=use_cuda)
     writer = helper.get_summary_writer(__file__, params)
     env = helper.make_env(params, 'env')
@@ -171,7 +173,5 @@ if __name__ == "__main__":
     parser.add_argument("--target_network_update_f", type=int, default=10000)
     parser.add_argument("--max_grad_norm", type=float)
 
-
-    parsed = parser.parse_args()
-    print('arguments:', parsed)
-    run(parsed)
+    params = helper.get_parsed_params(parser)
+    run(params)
