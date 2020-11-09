@@ -109,8 +109,6 @@ def run(params: argparse.Namespace):
 
             if done:
                 writer.add_scalar("loss_idx", loss.data, episode_no)
-
-            if done:
                 writer.add_scalar("total_loss", loss.data, episode_no)
 
             # Optimize the policy

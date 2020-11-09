@@ -1,4 +1,5 @@
 .idea/
+.comet.config
 venv/
 algs/dqn/runs/
 **/__pycache__/

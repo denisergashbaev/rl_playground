@@ -2,26 +2,21 @@ import gym
 import torch as th
 from stable_baselines3.common.preprocessing import is_image_space
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
-from torch import nn as nn
+from torch import nn
 
 
 class ColoringCNN(BaseFeaturesExtractor):
     """
-    CNN from DQN nature paper:
-        Mnih, Volodymyr, et al.
-        "Human-level control through deep reinforcement learning."
-        Nature 518.7540 (2015): 529-533.
-
     :param observation_space: (gym.Space)
     :param features_dim: (int) Number of features extracted.
         This corresponds to the number of unit for the last layer.
     """
 
-    def __init__(self, observation_space: gym.spaces.Box, features_dim: int = 512):
+    def __init__(self, observation_space: gym.spaces.Box, features_dim: int):
         super(ColoringCNN, self).__init__(observation_space, features_dim)
         # We assume CxHxW images (channels first)
         # Re-ordering will be done by pre-preprocessing or wrapper
-        assert is_image_space(observation_space), (
+        assert is_image_space(observation_space, channels_last=False), (
             "You should use NatureCNN "
             f"only with images not with {observation_space} "
             "(you are probably using `CnnPolicy` instead of `MlpPolicy`)"
